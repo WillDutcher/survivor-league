@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { getPlayers, createPlayer } = require('../controllers/playerController');
+const {
+    getPlayers,
+    createPlayer,
+    updatePlayer,
+    removePlayer
+} = require('../controllers/playerController');
 // const { abc } = require('../controllers/playerController');
 
 // Test route
@@ -10,6 +15,8 @@ const { getPlayers, createPlayer } = require('../controllers/playerController');
 
 router.get('/', getPlayers);
 router.post('/', createPlayer);
+router.patch('/:playerId', updatePlayer);
+router.delete('/:playerId', removePlayer);
 // router.get('/abc', abc);
 
 module.exports = router;

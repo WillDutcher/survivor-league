@@ -17,19 +17,19 @@ A full-stack web application to manage a custom NFL Survivor League, replacing a
 ### Option 1: Basic Entry – $20
 - Player is allowed to rebuy if they lose, **up to and including Week 5**.
 - Rebuy costs:
-    - **Week 1:** $10
-    - **Weeks 2–5:** $30
+  - **Week 1:** $10
+  - **Weeks 2–5:** $30
 - No rebuys allowed starting Week 6.
 
 ### Option 2: Premium Entry – $80
 - Player receives **three (3) free rebuys** that may be used **up to and including Week 8**.
 - No rebuys are allowed:
-    - After **Week 8**, or
-    - After using all 3 free rebuys (i.e., 3 losses = elimination)
+  - After **Week 8**, or
+  - After using all 3 free rebuys (i.e., 3 losses = elimination)
 
 ---
 
-## 📅 Weekly Picks
+## 🗒️ Weekly Picks
 - Each player may only pick **one team per week**, unless forced to pick more due to a tie.
 - Once a team is picked, that team is **no longer available** to that player for the rest of the season.
 - Players **can submit picks ahead of time** for future weeks and **can edit them at any time** up until kickoff.
@@ -40,10 +40,10 @@ A full-stack web application to manage a custom NFL Survivor League, replacing a
 
 ## ⚡ Auto-Pick Logic (If Player Misses a Pick)
 - If a player fails to submit a pick by **12:59 PM EST Sunday**, the system will:
-    1. Look at the teams the player has **not used** yet.
-    2. Pick the team with the **highest available spread**.
-    3. If multiple teams are tied, the system chooses the **home team** of the **earliest game**, in the order:
-        - 1 PM games > 4 PM games > Sunday Night Football > Monday games.
+  1. Look at the teams the player has **not used** yet.
+  2. Pick the team with the **highest available spread**.
+  3. If multiple teams are tied, the system chooses the **home team** of the **earliest game**, in the order:
+    - 1 PM games > 4 PM games > Sunday Night Football > Monday games.
 
 ---
 
@@ -64,7 +64,7 @@ A player is eliminated if:
 
 ---
 
-## 🔒 Pick Visibility
+## 🔐 Pick Visibility
 - Picks remain **private** until **kickoff** of the selected game.
 - Once the game begins, the pick becomes **visible to all other players**.
 - Players picking Monday or future-day games will have their picks revealed at kickoff of those games only.
@@ -96,9 +96,9 @@ A player is eliminated if:
 
 ### Backend (Pick One)
 - **Option A: Supabase**
-    - PostgreSQL, built-in Auth, real-time updates
+  - PostgreSQL, built-in Auth, real-time updates
 - **Option B: Node.js + Express + PostgreSQL**
-    - Full control and custom logic
+  - Full control and custom logic
 
 ### Hosting
 - Frontend: **Vercel** or **Netlify**
@@ -106,15 +106,15 @@ A player is eliminated if:
 
 ### Optional APIs
 - **NFL Schedule & Scores API** (e.g., SportsDataIO, The Odds API)
-    - For live scores, spreads, auto-picks, and result verification
+  - For live scores, spreads, auto-picks, and result verification
 
 ---
 
 ## 📂 Spreadsheet Usage
 - The original Excel spreadsheet (`2019 Survivor League.xlsm`) is used for:
-    - Legacy data reference
-    - Testing rebuild accuracy
-    - Verifying admin workflows
+  - Legacy data reference
+  - Testing rebuild accuracy
+  - Verifying admin workflows
 - **Include it when setting up this project** for dev/debugging purposes.
 
 ---
@@ -123,33 +123,72 @@ A player is eliminated if:
 
 ### `/api/players`
 - `GET` – Returns a list of all players
-- `POST` – Adds a new player (requires `name` and `plan` in JSON body)
+- `POST` – Adds a new player (requires `firstName`, `lastName`, `email`, `password`, and `plan`)
+- `PATCH /api/players/:playerId` – Updates a player’s own info (requires authentication)
+- `DELETE /api/players/:playerId` – Deletes the player account (must match logged-in user or be admin)
+
+#### Validation:
+- `firstName` and `lastName`: required, non-empty strings, max 100 characters, converted to Proper Case (e.g., Will, BJ)
+- `email`: required, must match valid email format (e.g., user@example.com), and must be unique
+- `password`: required for account creation and update; must be encrypted
+  - Minimum 8 characters
+  - At least one uppercase letter
+  - At least one lowercase letter
+  - At least one digit
+  - At least one special character
+- `plan`: must be one of `basic`, `premium`
+- `phone`: optional, if provided must match format `(###) ###-####`
+- `paypalEmail`: optional, but often same as `email`; front-end should allow user to toggle to auto-fill if matching
 
 ```json
 POST /api/players
 {
-  "name": "Michael Z",
-  "plan": "premium"
+  "firstName": "William",
+  "lastName": "O",
+  "email": "william@example.com",
+  "password": "StrongPass1!",
+  "plan": "premium",
+  "phone": "(123) 456-7890",
+  "paypalEmail": "william@example.com"
 }
 ```
 
 ### `/api/picks`
-- `GET` - Returns all picks
-- `POST` - Adds a new pick (requires playerId, week, team)
+- `GET` – Returns all picks
+- `POST` – Adds a new pick (requires `playerId`, `week`, `team`, optional `type`)
+- `GET /api/picks/:playerId` – Returns all picks for a single player
+- `PATCH /api/picks/:pickId` – Updates a pick's result (e.g., win/loss/tie)
+
+#### Validation:
+- `playerId`: must be a number > 0
+- `week`: must be a number between 1 and 18
+- `team`: must be one of the valid 3-letter NFL team codes
+- `type` (optional): must be one of `manual`, `auto`, `carryover`
+
 ```json
 POST /api/picks
 {
   "playerId": 1,
   "week": 3,
   "team": "BUF",
-  "type": "manual" // optional, defaults to manual
+  "type": "manual"
 }
 ```
-- `GET /api/picks/:playerId` - Returns all picks for a single player
-- `PATCH /api/picks/:pickId` - Updates a pick's result (e.g., win/loss/tie)
+
 ```json
 PATCH /api/picks/1
 {
   "status": "win"
 }
 ```
+
+---
+
+## ✅ Next Steps
+1. Implement secure password storage using bcrypt.
+2. Add PATCH and DELETE routes for authenticated players.
+3. Add session logic for authentication (e.g., login route).
+4. Track and automate weekly pick enforcement and rebuy eligibility.
+5. Integrate live data (API) when MVP is working.
+
+Let the season begin!

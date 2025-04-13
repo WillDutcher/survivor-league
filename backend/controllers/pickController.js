@@ -2,7 +2,10 @@ const {
     addPick,
     getAllPicks,
     getPicksByPlayer,
-    updatePickStatus
+    updatePickStatus,
+    deletePick,
+    hasPickForWeek,
+    hasUsedTeam
 } = require('../models/pickModel');
 const {
     validTeams,
@@ -54,24 +57,18 @@ const createPick = (req, res) => {
     }
 
     // Prevent duplicate picks for same player/week
-    const existingWeekPick = getPicksByPlayer(playerId).find(p => p.week === parseInt(week));
-    if (existingWeekPick) {
-        console.warn(`Player ${ playerId } already picked a team for week ${ week }`, { week });
+    if (hasPickForWeek(playerId, week)) {
+        console.warn(`Player ${playerId} already has a pick for week ${week}`);
         return res.status(409).json({
-            message: `Player ${ playerId } has already submitted a pick for week ${ week }.`
+            message: `Player ${playerId} has already submitted a pick for week ${week}.`
         });
     }
 
     // Prevent reuse of a team already picked by player (any week)
-    const alreadyPickedTeam = getPicksByPlayer(playerId).find(p => p.team === team.toUpperCase());
-    if (alreadyPickedTeam) {
-        console.warn(`Player ${playerId} has already picked team ${team.toUpperCase()}`, {
-            playerId,
-            attemptedTeam: team.toUpperCase()
-        });
-
+    if (hasUsedTeam(playerId, team)) {
+        console.warn(`Player ${playerId} has already used ${team.toUpperCase()}`, { playerId, team })
         return res.status(409).json({
-            message: `Player ${playerId} has already picked team ${team.toUpperCase()}.`
+            message: `Player ${playerId} has already used team ${team.toUpperCase()} in a previous week.`
         });
     }
 
@@ -129,9 +126,21 @@ const updatePick = (req, res) => {
     res.json(updated);
 };
 
+// DELETE /api/picks/:pickId
+const removePick = (req, res) => {
+    const { pickId } = req.params;
+    const deleted = deletePick(pickId);
+    if (!deleted) {
+        console.warn(`Validation failed: Pick with id ${pickId} not found`, {pickId});
+        return res.status(404).json({message: 'Pick not found'});
+    }
+    return res.status(200).json({ message: 'Pick deleted successfully.' });
+};
+
 module.exports = {
     getPicks,
     getPicksForPlayer,
     createPick,
-    updatePick
+    updatePick,
+    removePick
 }

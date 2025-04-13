@@ -91,6 +91,71 @@ const createPlayer = async (req, res) => {
     return res.status(201).json(newPlayer);
 };
 
+const createAdmin = async (req, res) => {
+    const {
+        firstName,
+        lastName,
+        email,
+        password,
+        plan,
+        phone,
+        paypalEmail
+    } = req.body;
+
+    if (!firstName || typeof firstName !== 'string' || firstName.trim().length === 0) {
+        return res.status(400).json({ message: 'First name is required.' });
+    }
+
+    if (!lastName || typeof lastName !== 'string' || lastName.trim().length === 0) {
+        return res.status(400).json({ message: 'Last name is required.' });
+    }
+
+    const normalizedEmail = email?.toLowerCase();
+    if (!normalizedEmail || !emailRegex.test(normalizedEmail)) {
+        return res.status(400).json({ message: 'Valid email is required.' });
+    }
+
+    const existing = getAllPlayers().find((p) => p.email === normalizedEmail);
+    if (existing) {
+        return res.status(409).json({ message: 'A player with this email already exists.' });
+    }
+
+    if (!password || !isValidPassword(password)) {
+        return res.status(400).json({ message: 'Password must meet strength requirements.' });
+    }
+
+    if (!validPlans.includes(plan)) {
+        return res.status(400).json({
+            message: `Plan must be one of: ${validPlans.join(', ')}`
+        });
+    }
+
+    let formattedPhone = null;
+    if (phone) {
+        formattedPhone = formatPhoneNumber(phone);
+        if (!formattedPhone) {
+            return res.status(400).json({
+                message: 'Phone number must match format (###) ###-####.'
+            });
+        }
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const newPlayer = addPlayer({
+        firstName: toProperCase(firstName),
+        lastName: toProperCase(lastName),
+        email: normalizedEmail,
+        passwordHash,
+        plan,
+        phone: formattedPhone,
+        paypalEmail: paypalEmail?.toLowerCase() || null,
+        isAdmin: true
+    });
+
+    return res.status(201).json(newPlayer);
+};
+
 const updatePlayer = async (req, res) => {
     const { playerId } = req.params;
     const player = getPlayerById(playerId);
@@ -147,10 +212,34 @@ const removePlayer = (req, res) => {
     return res.status(200).json({ message: 'Player deleted successfully' });
 };
 
+const promoteToAdmin = (req, res) => {
+    const { playerId } = req.params;
+    const requestingUser = req.user; // from JWT
+
+    if (!requestingUser.isAdmin) {
+        return res.status(403).json({ message: 'Only admins can promote users.' });
+    }
+
+    const player = getPlayerById(playerId);
+    if (!player) {
+        return res.status(404).json({ message: 'Player not found.' });
+    }
+
+    player.isAdmin = true;
+    player.updatedAt = new Date().toISOString();
+
+    res.status(200).json({
+        message: `Player ${playerId} has been promoted to admin.`,
+        player
+    });
+}
+
 // module.exports = { getPlayers, abc }
 module.exports = {
     getPlayers,
     createPlayer,
     updatePlayer,
-    removePlayer
+    removePlayer,
+    promoteToAdmin,
+    createAdmin
 }

@@ -9,7 +9,8 @@ const addPlayer = ({
                        passwordHash,
                        plan,
                        phone,
-                       paypalEmail
+                       paypalEmail,
+                       isAdmin
                    }) => {
     const id = players.length + 1;
 
@@ -22,7 +23,7 @@ const addPlayer = ({
         plan,
         phone: phone?.trim() || null,
         paypalEmail: paypalEmail?.trim().toLowerCase() || null,
-        isAdmin: false,
+        isAdmin: typeof isAdmin === 'boolean' ? isAdmin : false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };

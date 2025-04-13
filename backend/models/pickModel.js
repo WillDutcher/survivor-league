@@ -33,9 +33,30 @@ const updatePickStatus = (pickId, status) => {
     return null;
 };
 
+const deletePick = (pickId) => {
+    const index = picks.findIndex(p => p.id === parseInt(pickId));
+    if (index !== -1) {
+        return picks.splice(index, 1)[0]; // returns the deleted pick
+    }
+    return null;
+};
+
+const hasPickForWeek = (playerId, week) => {
+    return picks.some(p => p.playerId === parseInt(playerId) && p.week === parseInt(week));
+};
+
+const hasUsedTeam = (playerId, team) => {
+    return picks.some(
+        (p) => p.playerId === parseInt(playerId) && p.team === team.toUpperCase()
+    );
+};
+
 module.exports = {
     addPick,
     getAllPicks,
     getPicksByPlayer,
-    updatePickStatus
+    updatePickStatus,
+    deletePick,
+    hasPickForWeek,
+    hasUsedTeam
 }

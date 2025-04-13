@@ -8,10 +8,9 @@ app.use(express.json());
 const playerRoutes = require('./routes/playerRoutes');
 app.use('/api/players', playerRoutes);
 
-// Test message
-app.get('/', (req, res) => {
-    res.send(`Survivor League backend is running!`)
-});
+// Import and mount the pick routes
+const pickRoutes = require('./routes/pickRoutes');
+app.use('/api/picks', pickRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}`);

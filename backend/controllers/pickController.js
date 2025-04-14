@@ -13,6 +13,7 @@ const {
     validPickStatuses
 } = require('../constants/enums');
 const { getAllPlayers } = require('../models/playerModel');
+const { getGameByWeekAndTeam } = require('../models/gameModel');
 
 // GET /api/picks
 const getPicks = (req, res) => {
@@ -93,6 +94,34 @@ const createPick = (req, res) => {
         return res.status(400).json({
             message: `type must be one of: ${validPickTypes.join(', ')}`
         });
+    }
+
+    // Prevent picking a team after game kickoff
+    const game = getGameByWeekAndTeam(parseInt(week), team.toUpperCase());
+    if (game) {
+        const now = new Date();
+        const kickoffTime = new Date(game.kickoff);
+
+        console.log('DEBUG - NOW:', now.toISOString());
+        console.log('DEBUG - KICKOFF:', kickoffTime.toISOString());
+
+        // 1. Game has already started
+        const hasStarted = now >= kickoffTime;
+
+        // 2. Game has a final result
+        const isFinal = typeof game.homeScore === 'number' && typeof game.awayScore === 'number';
+
+        if (hasStarted || isFinal) {
+            console.warn(`Invalid pick: Game already in progress or finished`, {
+                team: team.toUpperCase(),
+                week,
+                hasStarted,
+                isFinal
+            });
+            return res.status(400).json({
+                message: `You cannot pick ${team.toUpperCase()} for Week ${week} because the game has already started or is final.`
+            });
+        }
     }
 
     // Proceed to add pick

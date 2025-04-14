@@ -13,7 +13,12 @@ app.use('/api/players', playerRoutes);
 const pickRoutes = require('./routes/pickRoutes');
 app.use('/api/picks', pickRoutes);
 
+// Auth logic
 const authRoutes = require('./routes/authRoutes');
 app.use('/api', authRoutes);
+
+// Games logic
+const gameRoutes = require('./routes/gameRoutes');
+app.use('/api/games', gameRoutes);
 
 module.exports = app;
